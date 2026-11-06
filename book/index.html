@@ -3360,6 +3360,12 @@ window.__tintPick=function(day,id){return id==="bauhaus"?BH[h("bh|"+day)%BH.leng
 .dqc .l small{display:block;margin-top:2px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--mute)}
 .dqc.f-chat .l p{display:inline-block;text-align:left;padding:8px 12px;border-radius:14px;background:var(--chip)}
 .dqc.f-chat .l.her p{background:color-mix(in srgb,var(--pen) 16%,var(--paper));border-bottom-right-radius:4px}.dqc.f-chat .l.me p{border-bottom-left-radius:4px}
+/* (1107) 点开收起：平时只露头一句；展开时整组摊开、浮在上面 */
+.dqc .lines>div{gap:0}.dqc .lines .l{margin:10px 0 0}.dqc .lines .l:first-child{margin-top:10px}.dqc .l{margin-bottom:0}
+.dqc.open .lines{grid-template-rows:1fr}.dqc .more{margin-top:10px}.dqc.f-chat .more{border-top-style:dotted}
+.dqc .more i{font-style:normal;margin-left:6px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--mute)}
+.dqc.open .more i{display:none}.dqc.open .more svg{transform:rotate(180deg)}
+.stk.c-dq:has(.dqc.open){z-index:45}
 </style>
 <script>/* 那天多的照片贴成照片小卡（1105）；照片的话整段印出来（1106）；原话按话题、按照片分开（1106）。
    (1107) 她：「家里二次拼贴的对话和图片，不像第一次的那种有好的排版，对话也不能放大缩小也没有贴纸啊，根本没参与设计。」
@@ -3385,11 +3391,15 @@ function rotF(){var v=parseFloat(getComputedStyle(document.documentElement).getP
 function picSt(){var id=styleId();return id==="film"?4:/^(swiss|mono|eink|brutal|bigtype|news|receipt|constructivist|bauhaus)$/.test(id)?1:/^(neo|memphis|y2k|washi|pixel)$/.test(id)?3:0}
 /* 对话便签：三种形——便签（撕边、胶带）/ 聊天（气泡）/ 小卡；对着前四张照片说的，头上带那张的小图 */
 var DQF=[["note","便签"],["chat","聊天"],["card","小卡"]];
+/* (1107) 她：「我们原来是点击能展开……你确定是分别的对话能展开关闭吗」——平时只露头一句，点「展开」整组摊开（浮在上面，不推下面），再点收起；
+   每张各管各的。按钮用页面原来那套（.qnote 里的 .qmore：页面的手势那段拦住它切 .open、换「展开 / 收起」、轻震一下，不会拖动贴纸） */
 function dqHTML(q,st){var f=DQF[(st||0)%DQF.length][0],L=q.L,src=q.k&&q.k.indexOf("ph:")===0?q.k.slice(3):"";
  var th=src&&!extraOf(q.d||cur()).some(function(p){return p.src===src})?src:"";
- return '<div class="dqc f-'+f+'">'+(f==="note"?'<i class="tape"></i>':'')+'<div class="bd'+(f==="note"?' torn':'')+'"><div class="hd">'
-  +(th?'<img alt="" draggable="false" src="'+h(th)+'">':'')+'<b>'+h(q.g||"原话")+'</b><span class="n">'+L.length+' 句</span></div>'
-  +L.map(function(x){var w=x.w==="me"?"me":"her";return '<div class="l '+w+'"><p>'+h(x.p)+'</p><small>'+h(nm(w))+(x.t?" · "+h(x.t):"")+'</small></div>'}).join("")+'</div></div>'}
+ var ln=function(x){var w=x.w==="me"?"me":"her";return '<div class="l '+w+'"><p>'+h(x.p)+'</p><small>'+h(nm(w))+(x.t?" · "+h(x.t):"")+'</small></div>'};
+ var more=L.length>1?'<div class="lines"><div>'+L.slice(1).map(ln).join("")+'</div></div><button class="more qmore" type="button"><span>展开</span><i>还有 '+(L.length-1)+' 句</i>'
+  +'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg></button>':'';
+ return '<div class="dqc qnote f-'+f+'">'+(f==="note"?'<i class="tape"></i>':'')+'<div class="bd'+(f==="note"?' torn':'')+'"><div class="hd">'
+  +(th?'<img alt="" draggable="false" src="'+h(th)+'">':'')+'<b>'+h(q.g||"原话")+'</b><span class="n">'+L.length+' 句</span></div>'+ln(L[0])+more+'</div></div>'}
 if(typeof getItem==="function"){var _gi=getItem;getItem=function(c,k){
  if(c==="dq"){var q=qval(k);if(!q)return null;return {w:240,html:1,rs:1,n:"原话"+(q.g?" · "+q.g:""),forms:DQF.map(function(f){return f[1]}),make:function(t,st){return dqHTML(q,st)}}}
  if(c!=="dpic")return _gi.apply(this,arguments);var d=val(k);if(!d)return null;
