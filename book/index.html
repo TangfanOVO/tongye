@@ -3333,7 +3333,11 @@ window.__tintPick=function(day,id){return id==="bauhaus"?BH[h("bh|"+day)%BH.leng
 </script>
 <style>/* 那天多的照片（1105）：样子跟她自己贴的照片一样 */
 .stk.c-dpic{--w:170px}
-.stk.c-dpic:not(.sel) .pic .mt:empty{visibility:hidden}
+.stk.c-dpic:not(.sel) .pic .mt:empty:not(.dnote){visibility:hidden}
+/* (1106) 她没自己写的时候，底下垫着那张照片的话（照片自己的 note）：平时墨色、最多三行；点开（选中）整句露出来、淡一点，表示可以盖掉重写 */
+.stk.c-dpic .pic .mt.dnote:empty{font-size:13px;line-height:1.45}
+.stk.c-dpic:not(.sel) .pic .mt.dnote:empty{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.stk.c-dpic:not(.sel) .pic .mt.dnote:empty::before{opacity:1}
 </style>
 <script>/* 那天多的照片贴成照片小卡（1105）。前四张照旧进主照片、双联、手机框，第五张起贴在纸上 */
 (function(){
@@ -3344,7 +3348,13 @@ function val(k){try{var d=JSON.parse(decodeURIComponent(String(k).slice(2)));ret
 /* 新的一类：照片地址就在 key 里，存下来、换设备、从服务器重摆都认得 */
 if(typeof getItem==="function"){var _gi=getItem;getItem=function(c,k){if(c!=="dpic")return _gi.apply(this,arguments);var d=val(k);if(!d)return null;
  return {w:170,html:1,rs:1,n:d.n||((d.t?d.t+" ":"")+"那天的照片"),forms:PICF.map(function(f){return f[1]}),
-  make:function(t,st){st=st||0;return '<figure class="pic f-'+PICF[st%PICF.length][0]+'"><div class="im"><img alt="" draggable="false" src="'+h(d.s)+'"></div><figcaption class="mt" contenteditable="true" spellcheck="false" data-ph="写一句"></figcaption></figure>'}}}}
+  make:function(t,st){st=st||0;var nt=noteOf(d);return '<figure class="pic f-'+PICF[st%PICF.length][0]+'"><div class="im"><img alt="" draggable="false" src="'+h(d.s)+'"></div><figcaption class="mt'+(nt?' dnote':'')+'" contenteditable="true" spellcheck="false" data-ph="'+h(nt||"写一句")+'"></figcaption></figure>'}}}}
+/* (1106) 她：「这些图你怎么不说话，你只贴」——底下那行一直是空的。那张照片的话（photos[].note）垫在底下：
+   先认这天最新的那份（我改了话，卡上跟着变），找不到用贴的时候记在 key 里的；她自己打了字就是她的（存在 m 里，盖在上面） */
+function noteOf(d){var L=(window.BZDPIC||{})[cur()]||[];for(var i=0;i<L.length;i++)if(L[i]&&L[i].src===d.s&&L[i].note)return String(L[i].note);return String(d.n||"")}
+function caps(){[].forEach.call(document.querySelectorAll("#page .stk.c-dpic .pic .mt"),function(mt){var s=mt.closest(".stk"),d=s&&val(s.dataset.k);if(!d)return;
+ var nt=noteOf(d),ph=nt||"写一句";if(mt.getAttribute("data-ph")!==ph)mt.setAttribute("data-ph",ph);
+ if(mt.classList.contains("dnote")!==!!nt){if(nt)mt.classList.add("dnote");else mt.classList.remove("dnote")}})}   /* 只在真变了的时候动 class：WebKit 里加删一个没变的类也算变化（1007） */
 function onPage(){return [].slice.call(document.querySelectorAll("#page .stk.c-dpic")).map(function(s){var d=val(s.dataset.k);return d&&d.s}).filter(Boolean)}
 function ratio(src){return new Promise(function(ok){var im=new Image(),t=setTimeout(function(){ok(1.33)},30000);   /* (1106) 4 秒→30 秒：网慢时竖长的照片没量到就按 1.33 排，第二行压住第一张底下 31px（10.18） */
  im.onload=function(){clearTimeout(t);ok(im.naturalWidth?im.naturalHeight/im.naturalWidth:1.33)};im.onerror=function(){clearTimeout(t);ok(1.33)};im.src=src})}
@@ -3373,7 +3383,8 @@ function run(day){
    var w=Math.min(170,Math.floor(W/2)-14),y=bottom+20,rowH=0,spots=[];
    todo.forEach(function(p,i){var col=i%2;if(col===0&&i){y+=rowH+16;rowH=0}
     spots.push({p:p,x:col?Math.round(W/2+6):Math.max(8,Math.round(W/2-w-6)),y:y,r:col?3:-3});
-    rowH=Math.max(rowH,Math.round(w*rs[i])+44)});        /* 相纸框连底下写字那条约 44px */
+    var nt=String(p.note||""),cap=nt?Math.min(3,Math.ceil(nt.length/11))*19+8:22;
+    rowH=Math.max(rowH,Math.round(w*rs[i])+22+cap)});        /* 相纸框约 22px，底下那行：空的一行 22px，垫了照片的话最多三行（1106） */
    var need=y+rowH+28-pg.clientHeight;
    if(need>0&&typeof applyExt==="function"){P0.ext=((+P0.ext)||0)+need;applyExt()}
    var was=restoring;restoring=true;
@@ -3382,11 +3393,11 @@ function run(day){
    restoring=was;
   }catch(e){console.warn("dpic",e)}finally{running=false}
  })}
-function later(day,ms){setTimeout(function(){run(day)},ms)}
+function later(day,ms){setTimeout(function(){try{caps()}catch(e){}run(day)},ms)}
 window.__dpicKick=function(day){later(day,700)};        /* 我刚写完那天、数据到了 */
 var _sd=window.journalSetDay;if(typeof _sd==="function")window.journalSetDay=function(k){var r=_sd.apply(this,arguments);later(k,800);return r};
 if(typeof restorePage==="function"){var _rp=restorePage;restorePage=function(P){var r=_rp.apply(this,arguments);later(cur(),400);return r}}
-window.__dpicRun=run;
+window.__dpicRun=run;window.__dpicCaps=caps;
 })();
 </script>
 <script>/* 加长那截纸上的贴纸，重开时别被收回纸里（1105） */

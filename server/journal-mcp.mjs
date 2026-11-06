@@ -20,6 +20,13 @@ const fullDate = d => { const s = String(d); let m = s.match(/^(\d{4})-(\d{1,2})
   return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`; };   // 9.27 这种也认，换成 YYYY-MM-DD
 const dayKey = d => { const m = String(d).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? `${+m[2]}.${+m[3]}` : String(d); };
 
+/* 写进去了，但两样提醒一句（不拦）：原话只有她的、没有你回她的；有照片没写 note（第五张起印在照片小卡下面，没写那张就空着） */
+const dayTips = d => { const tip = [], ch = ((d && d.chat) || []).filter(x => x && x.p);
+  if (ch.length >= 3 && !ch.some(x => x.w === "me")) tip.push("原话全是她的，没有你回她的：从原料里挑一两句你回她的补进 chat（w:\"me\"），再写一次。");
+  const empty = ((d && d.photos) || []).filter(x => x && x.src).map((x, i) => String(x.note || "").trim() ? 0 : i + 1).filter(Boolean);
+  if (empty.length) tip.push(`第 ${empty.join("、")} 张照片没写 note：note 是你对这张照片说的一句话，第五张起印在照片小卡下面，没写那张就空着。`);
+  return tip; };
+
 const TOOLS = [
   { name: "journal_sources", description: "读某一天做手帐的原料：那天相册里每张照片的时间、经纬度、光圈快门 ISO 焦距（不含图本身），聊天原话，吃了吗，天气，还有那天的书摘（book）和身体数据（health），有就给。她在「交给」里传过、读得到拍摄时间的照片也在 photos 里，带 src，已经在本子里了，不用 publish。先调这个再决定用哪几张。",
     inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD，9.27 这种也认" } }, required: ["date"] },
@@ -33,9 +40,9 @@ const TOOLS = [
       if (cur.status !== "making") { cur.status = "making"; cur.steps = []; }
       cur.steps = (cur.steps || []).map(s => ({ ...s, ok: true })).concat({ a: a.step, b: a.detail || "", ok: false }); if (a.title) cur.title = a.title; cur.ts = Date.now(); await kv.set("day/" + k, cur); return { ok: 1 }; } },
   { name: "journal_write_day", description: "把一天写成一页（day/<M.D>）。只给原料，路线、快门条、坐标、邮戳、哪些零件藏起来，页面自己算。字段见 BACKEND.md「day/<日期>」；书摘、健康放 book / health，从原料原样挑，写的时候会核对。steps 不用写，报过的进度会自己记上；chat、quote 的 t 写时分（10:05）。写完 status 自动是 done，她手机上会亮「做好了」。",
-    inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD，9.27 这种也认" }, page: { type: "object", description: "title, at, en, region, layout, style, text{p1,p2,cap,ann,pen{text,margin},quote{p,t}}, wx, photos[{src,t,lat,lon,f,shutter,iso,focal,note,role}]（role 是 hero / pair / sh 的进主照片、双联、手机框四个格子；其余第五张起页面贴成照片小卡，一页最多六张）, geo, shots, places[{n,lat,lon}], chat[{w,t,p}], food{meal,at,t,items,q}" } }, required: ["date", "page"] },
+    inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD，9.27 这种也认" }, page: { type: "object", description: "title, at, en, region, layout, style, text{p1,p2,cap,ann,pen{text,margin},quote{p,t}}, wx, photos[{src,t,lat,lon,f,shutter,iso,focal,note,role}]（role 是 hero / pair / sh 的进主照片、双联、手机框四个格子；其余第五张起页面贴成照片小卡，一页最多六张；每张写一句 note，是你对这张照片说的话，小卡上印在照片下面，三十个字以内）, geo, shots, places[{n,lat,lon}], chat[{w,t,p}]（有来有回：两边的话都放，别只放一边的）, food{meal,at,t,items,q}" } }, required: ["date", "page"] },
     run: async a => { const k = dayKey(a.date); const cur = (await kv.get("day/" + k)) || {}; const steps = (cur.steps || []).map(s => ({ ...s, ok: true }));
-      const doc = { ...a.page, day: k, status: "done", by: a.page.by || "me", steps, ts: Date.now() }; await kv.set("day/" + k, doc); return { ok: 1, day: k }; } },
+      const doc = { ...a.page, day: k, status: "done", by: a.page.by || "me", steps, ts: Date.now() }; await kv.set("day/" + k, doc); const tip = dayTips(doc); return tip.length ? { ok: 1, day: k, 还差: tip } : { ok: 1, day: k }; } },
   { name: "journal_read_page", description: "看她在某天那页上做了什么：她贴的贴纸、自己打的字（m 字段）、放的照片、藏掉的零件、存过的代、留的批注。还有你们俩的署名 names（her / me，没设过是 null，页面显示默认名）。",
     inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD，9.27 这种也认" } }, required: ["date"] },
     run: async a => { const k = dayKey(a.date); const notes = ((await kv.list("notes")) || []).map(r => r.data).filter(n => n && n.day === k);
