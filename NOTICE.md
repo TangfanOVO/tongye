@@ -10,7 +10,7 @@
 | 贴纸 · 胶带花色 | [pattern.monster](https://pattern.monster) | pattern.monster | MIT；颜色和深浅改成跟着贴纸走 |
 | 贴纸 · 手绘、涂鸦 | [dddoodle](https://fffuel.co/dddoodle/) | Seb（fffuel.co） | CC BY 4.0；去掉了模糊滤镜、坐标取整、颜色改成跟着风格走 |
 | 贴纸 · 拼贴 | 博物馆开放馆藏的扫描：[The Met](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access)、[Cleveland Museum of Art](https://www.clevelandart.org/open-access)、[Wellcome Collection](https://wellcomecollection.org) | 各馆 | CC0 / 公有领域；每一张的出处和链接写在页面的 `CLIP.meta` 里 |
-| 贴纸 · 拼贴 · 新西兰的鸟 | J. G. Keulemans 为 W. L. Buller《A History of the Birds of New Zealand》（1873）画的图版，扫描来自 [Wikimedia Commons](https://commons.wikimedia.org/wiki/Category:A_History_of_the_Birds_of_New_Zealand_by_Buller) | J. G. Keulemans（1842–1912） | 公有领域；每一张的文件页链接写在页面的 `CLIP.meta` 里 |
+| 贴纸 · 拼贴 · 鸟 | John Gould《The Birds of Europe》（1837）、《The Birds of Australia》的图版；J. G. Keulemans 为 W. L. Buller《A History of the Birds of New Zealand》（1873）画的图版；1876 年的家麻雀图版——扫描来自 [Wikimedia Commons](https://commons.wikimedia.org)；Robert Havell 照 J. J. Audubon 原画刻的版画（[美国国家美术馆](https://www.nga.gov/open-access-images.html)） | Gould、Keulemans、Audubon / Havell 等 | 公有领域 / CC0；每一张的文件页链接写在页面的 `CLIP.meta` 里 |
 | 存长图 | [html-to-image](https://github.com/bubkoo/html-to-image) | W.Y.（bubkoo） | MIT |
 | 字体 | 从 Google Fonts 现取，不随仓库分发 | 各字体作者 | 各自的许可（多为 OFL） |
 
