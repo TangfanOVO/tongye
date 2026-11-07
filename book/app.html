@@ -1907,7 +1907,11 @@ const uses=(c,k)=>USE[c+"~"+k]||0;
 const byUse=(c,arr)=>arr.map((x,i)=>[x,i]).sort((p,q)=>uses(c,q[0][0])-uses(c,p[0][0])||p[1]-q[1]).map(p=>p[0]);
 let cat="wx";
 function chips(arr,cur,attr){return arr.map(([nm,c],i)=>`<button class="dot tap ${i===cur?"on":""}" data-${attr}="${i}" title="${nm}" aria-label="${nm}" style="--c:${c==="pen"?"var(--pen)":c}"></button>`).join("")}
-function renderTray(){
+function renderTray(){var k=__trayKeep();__renderTray0();__trayBack(k)}
+/* (1107) 重画贴纸栏时记住每一排滚到哪 */
+function __trayKeep(){var w=document.getElementById("wxdays"),c=document.getElementById("cats");return {cat:cat,c:c?c.scrollLeft:0,s:w?[].map.call(w.querySelectorAll(".isets"),function(e){return e.scrollLeft}):[]}}
+function __trayBack(o){try{var c=document.getElementById("cats"),w=document.getElementById("wxdays"),rows=w?[].slice.call(w.querySelectorAll(".isets")):[];if(c)c.scrollLeft=o.c;if(o.cat===cat)rows.forEach(function(e,i){if(o.s[i])e.scrollLeft=o.s[i]});(c?[c]:[]).concat(rows).forEach(function(e){var on=e.querySelector("button.on");if(!on)return;var r=on.getBoundingClientRect(),q=e.getBoundingClientRect();if(!q.width)return;if(r.left<q.left+4||r.right>q.right-4)e.scrollLeft+=(r.left+r.width/2)-(q.left+q.width/2)})}catch(e){}}
+function __renderTray0(){
  const hasUse=Object.keys(USE).some(id=>{const [c]=id.split("~");return LIB[c]});if(cat==="fav"&&!hasUse)cat=catOrder().find(k=>!CFG.hidden.includes(k))||"kao";if(cat!=="fav"&&CFG.hidden.includes(cat))cat=catOrder().find(k=>!CFG.hidden.includes(k))||"kao";
  $("#cats").innerHTML=(hasUse?`<button class="tap ${cat==="fav"?"on":""}" data-c="fav">常用</button>`:"")+catOrder().filter(k=>!CFG.hidden.includes(k)).map(k=>`<button class="tap ${k===cat?"on":""}" data-c="${k}">${LIB[k].name}</button>`).join("");
  $$("#cats button").forEach(b=>b.onclick=()=>{cat=b.dataset.c;buzz(4);renderTray()});
@@ -3272,83 +3276,57 @@ try{tint()}catch(e){}
 window.__tintPick=function(day,id){return id==="bauhaus"?BH[h("bh|"+day)%BH.length]:id==="memphis"?MP[h("mp|"+day)%MP.length]:null};
 })();
 </script>
-<style>/* 那天多的照片（1105）：样子跟她自己贴的照片一样 */
-.stk.c-dpic{--w:170px}
-.stk.c-dpic:not(.sel) .pic .mt:empty:not(.dnote){visibility:hidden}
-/* (1106) 她没自己写的时候，底下垫着那张照片的话（照片自己的 note）：整段印出来，平时墨色；点开（选中）淡一点，表示可以盖掉重写 */
-.stk.c-dpic .pic .mt.dnote:empty{font-size:13px;line-height:1.5;text-align:left;padding:5px 4px 2px}
-.stk.c-dpic:not(.sel) .pic .mt.dnote:empty::before{opacity:1}
-/* (1106) 一组原话一张便签，默认展开（老样子 dqn，1107 换成 dqc） */
-.stk.c-dq{--w:240px}.stk .dqn .lines{grid-template-rows:1fr}.stk .dqn .torn{padding-bottom:12px}
-/* (1107) 下面这一截跟风格走：照片卡顶上压一条风格色的胶带（notape 的风格不贴） */
-.stk.c-dpic::before{content:"";position:absolute;z-index:2;top:-9px;left:50%;width:58px;height:18px;margin-left:-29px;background:var(--tape);opacity:.92;transform:rotate(calc(-5deg*var(--rot,1)));clip-path:polygon(0 10%,5% 0,10% 12%,15% 0,100% 0,95% 12%,100% 30%,95% 50%,100% 70%,95% 88%,100% 100%,0 100%,5% 85%,0 65%,5% 45%,0 25%)}
-:root.notape .stk.c-dpic::before{display:none}
-/* (1107) 照片的话在胶片、圆角、无边、白边几种框里：原来字悬在图下面 26px（白边干脆藏了），那是给一两个字的；一段话排在图下面，卡跟着长高。她自己写的字不动 */
-.stk.c-dpic .pic.f-film .mt.dnote:empty,.stk.c-dpic .pic.f-round .mt.dnote:empty,.stk.c-dpic .pic.f-bare .mt.dnote:empty,.stk.c-dpic .pic.f-white .mt.dnote:empty{position:static;display:block;margin-top:6px}
-.stk.c-dpic .pic.f-film .mt.dnote:empty{color:#ECE8DF;padding:4px 6px 6px}.stk.c-dpic .pic.f-film .mt.dnote:empty::before{color:#ECE8DF}
-.stk.c-dpic .pic.f-round .mt.dnote:empty,.stk.c-dpic .pic.f-bare .mt.dnote:empty,.stk.c-dpic .pic.f-white .mt.dnote:empty{color:var(--ink)}
-/* 对话便签 dqc：便签（撕边、胶带，跟纸条一个手感）/ 聊天（气泡）/ 小卡；正文 14px，她的靠右、我的靠左 */
-.dqc{position:relative;color:var(--ink)}.dqc .tape{z-index:2}
-.dqc .bd{position:relative;padding:16px 14px 14px}
-.dqc.f-card .bd{background:var(--paper);border:1px solid var(--line);border-radius:3px;box-shadow:0 6px 14px -10px rgba(0,0,0,.35)}
-.dqc.f-chat .bd{background:transparent;padding:4px 2px}
-:root.flat .dqc .bd{box-shadow:none;filter:none}
-.dqc .hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--mute)}
-.dqc .hd b{font-family:var(--serif);font-size:13px;font-weight:600;letter-spacing:0;color:var(--pen)}.dqc .hd .n{margin-left:auto}
-.dqc .hd img{width:34px;height:34px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 2px var(--paper),0 2px 6px rgba(0,0,0,.2);pointer-events:none}
-.dqc .l{max-width:88%;margin:0 0 10px}.dqc .l:last-child{margin-bottom:0}.dqc .l.her{margin-left:auto;text-align:right}
-.dqc .l p{margin:0;font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--ink)}.dqc .l.me p{color:var(--ink2)}
-.dqc .l small{display:block;margin-top:2px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--mute)}
-.dqc.f-chat .l p{display:inline-block;text-align:left;padding:8px 12px;border-radius:14px;background:var(--chip)}
-.dqc.f-chat .l.her p{background:color-mix(in srgb,var(--pen) 16%,var(--paper));border-bottom-right-radius:4px}.dqc.f-chat .l.me p{border-bottom-left-radius:4px}
-/* (1107) 点开收起：平时只露头一句；展开时整组摊开、浮在上面 */
-.dqc .lines>div{gap:0}.dqc .lines .l{margin:10px 0 0}.dqc .lines .l:first-child{margin-top:10px}.dqc .l{margin-bottom:0}
-.dqc.open .lines{grid-template-rows:1fr}.dqc .more{margin-top:10px}.dqc.f-chat .more{border-top-style:dotted}
-.dqc .more i{font-style:normal;margin-left:6px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--mute)}
-.dqc.open .more i{display:none}.dqc.open .more svg{transform:rotate(180deg)}
-.stk.c-dq:has(.dqc.open){z-index:45}
+<style>/* 那天多的照片、分开的原话（1105 起；1107 夜改成板块）：样子照主照片那块，跟着风格、版式走 */
+/* 接在格子图最后一行后面：xt 这个线名格子图里没有，浏览器就数多出来的那几行（Chromium、WebKit 都试过），藏起来的板块空出来的格子不会被它占 */
+#page>.blk.xb{grid-column:1/-1}
+.xb .first.me{text-align:left;font-family:inherit;color:var(--ink2)}
+.xb .torn .hd span:first-child{white-space:normal}
+.xb .torn .hd .xth{width:26px;height:26px;object-fit:cover;border-radius:3px;vertical-align:-8px;margin-right:6px;box-shadow:0 0 0 2px var(--paper);pointer-events:none}
+.xb.xl .note-wrap{margin-left:6px;margin-right:auto}
+#page>.blk.xb.xq .note-wrap{margin-top:0}
+.xb .cap>span:first-child{min-width:0;overflow-wrap:anywhere}
+.xb.pair .xpc{min-width:0}.xb.pair .xpc>.film{margin:0}.xb.pair .xpc+.xpc{margin-top:22px}
+/* 版式里写给主照片、双联照的那几条，后面这截照着来一份 */
+.page[data-layout="scatter"] .xb.hero{transform:rotate(calc(-1.2deg*var(--rot)))}
+.page[data-layout="scatter"] .xb.hero.xl{transform:rotate(calc(1.2deg*var(--rot)))}
+.page[data-layout="scatter"] .xb.pair{transform:rotate(calc(.8deg*var(--rot)))}
+.page[data-layout="poster"] .xb{display:none}
+.page[data-layout="polaroid"] .xb .film .card{background:#FFFFFF;padding:8px 8px 30px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.page[data-layout="polaroid"] .xb .edge{display:none}
+.page[data-layout="polaroid"] .xb.hero{transform:rotate(calc(-2deg*var(--rot)));padding:0 10px}
+.page[data-layout="polaroid"] .xb.hero.xl{transform:rotate(calc(2deg*var(--rot)))}
+.page[data-layout="polaroid"] .xb .note-wrap{margin-top:-24px}
+.page[data-layout="polaroid"] .xb.xq .note-wrap{margin-top:0}
+.page[data-layout="polaroid"] .xb.pair .xpc:first-child{transform:rotate(calc(3deg*var(--rot)))}
+.page[data-layout="polaroid"] .xb.pair .xpc+.xpc{transform:rotate(calc(-2.5deg*var(--rot)))}
+.page[data-layout="letter"] .xb.hero{padding:0 18px}
+.page[data-layout="letter"] .xb.pair{padding:0 10px}
+.page[data-layout="timeline"] .xb .film{margin:0}
+.page[data-layout="filmstrip"] .xb.hero figure.film{background-color:#141414;background-image:linear-gradient(#E9E6DF 0 9px,transparent 9px),linear-gradient(#E9E6DF 0 9px,transparent 9px);background-size:6px 16px,6px 16px;background-position:4px 3px,calc(100% - 4px) 3px;background-repeat:repeat-y;padding:10px 16px}
+.page[data-layout="filmstrip"] .xb.pair{background-color:#141414;background-image:linear-gradient(#E9E6DF 0 9px,transparent 9px),linear-gradient(#E9E6DF 0 9px,transparent 9px);background-size:6px 16px,6px 16px;background-position:4px 3px,calc(100% - 4px) 3px;background-repeat:repeat-y;padding:10px 16px}
+.page[data-layout="filmstrip"] .xb.pair .cap{color:#E9E6DF}
 </style>
-<script>/* 那天多的照片贴成照片小卡（1105）；照片的话整段印出来（1106）；原话按话题、按照片分开（1106）。
-   (1107) 她：「家里二次拼贴的对话和图片，不像第一次的那种有好的排版，对话也不能放大缩小也没有贴纸啊，根本没参与设计。」
-   下面这一截重新排：跟这页的风格走（边框、胶带、撕边、阴影、歪多少），照片在上、那组对话压在照片下沿错开放，下一组左右换过来，
-   字少的两组并一行；不压任何板块；对话便签能拉伸、能缩放、能换形；每两组配一张这页风格的小贴纸 */
+<script>/* 那天多的照片、分开的原话（1105 起；1107 夜改成板块）。
+   1105～1107 是贴成一张张贴纸（照片小卡 dpic、原话便签 dq）。1107 夜她：「后面的排布其实我想的是也跟正文一样，不特殊点击手动排版删除，
+   就默认不动的，包括对话啊图片什么的，这个后面加的图的画风跟我们自己的设计完全不一样」。
+   现在：接在格子图下面的板块（#page>.blk.xb），一张照片一块，照主照片那块的样子——胶片框（点一下翻面看参数）、压在照片下沿的撕边纸条
+   装那张照片的那组原话（点「展开」）、底下一行说明；字少、没对话的两张并成一块双联；没对着照片的那组原话单独一块纸条。
+   跟正文的板块一个规矩：平时手指碰到就是滑页面；零件单里能藏、能放回来（存在 PAGE.xhide）；线放下来能按住挂到线上；
+   后面这几块之间能对调（PAGE.area 里两头都是 x- 的那几对），跟正文的板块对调不了（换了也不动，那一对当场抹掉）。
+   她贴在这截上的贴纸跟着板块走（页面原来那套「压在哪一块」认 #page>.blk[data-b]）；「装饰」开关也会撒到这几块上。
+   旧版贴纸的页（11.3～11.6）：打开时换成板块——那批小卡、便签不再摆（页面认不得这两类就跳过，下一次存就清掉），
+   我配的那几张小贴纸撕掉、按新板块的角重贴，纸长收回到刚好装下她贴的东西；旧版里她撕掉的照片、便签，换过来默认藏着。 */
 (function(){
-var MAX=6,DQMAX=6,GAP=24,OVER=8;   /* 对话便签只搭住照片卡下沿一点，胶带横跨接缝；26 会盖住照片底下那段话的最后一行（1107 自己量出来的） */
-function h(s){return String(s).replace(/["<>&]/g,function(c){return {'"':"&quot;","<":"&lt;",">":"&gt;","&":"&amp;"}[c]})}
-function key(p){return "p:"+encodeURIComponent(JSON.stringify({s:p.src,n:p.note||"",t:p.t||""}))}
-function val(k){try{var d=JSON.parse(decodeURIComponent(String(k).slice(2)));return d&&d.s?d:null}catch(e){return null}}
-function qkey(g,day){return "q:"+encodeURIComponent(JSON.stringify({k:g.k,g:g.g||"",d:day,L:g.L}))}
-function qval(k){try{var d=JSON.parse(decodeURIComponent(String(k).slice(2)));return d&&Array.isArray(d.L)&&d.L.length?d:null}catch(e){return null}}
-function nm(w){try{return NM(w)}catch(e){return w==="me"?"枫":"幡"}}
+var MAXP=30,SHORT=26,DECO=2;
+function h(s){return String(s==null?"":s).replace(/["<>&]/g,function(c){return {'"':"&quot;","<":"&lt;",">":"&gt;","&":"&amp;"}[c]})}
 function cur(){try{return String(PAGE_DAY||"")}catch(e){return ""}}       /* PAGE、PAGE_DAY 不一定挂在 window 上，直接用名字拿 */
 function pageObj(){try{return typeof PAGE==="object"&&PAGE?PAGE:null}catch(e){return null}}
-function live(day){return (window.BZDR||{})[day]||null}   /* 接数据那头存的那天原始记录（页面里的 LIVE 关在里面，外面拿不到） */
+function pg(){return document.getElementById("page")}
+function live(day){return (window.BZDR||{})[day]||null}   /* 接数据那头存的那天原始记录 */
 function extraOf(day){return ((window.BZDPIC||{})[day]||[]).filter(function(p){return p&&p.src})}
-function noteOf(d){var L=extraOf(cur());for(var i=0;i<L.length;i++)if(L[i].src===d.s&&L[i].note)return String(L[i].note);return String(d.n||"")}
-function capW(nt){var n=String(nt||"").length;return n<=26?170:Math.min(250,170+Math.round((n-26)*2.5))}
-function styleId(){return document.documentElement.getAttribute("data-style")||"qingmo"}
-function rotF(){var v=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rot"));return isNaN(v)?1:v}
-/* 照片卡的边框跟风格：胶片用胶片框，干净的几种用白边，圆的几种用圆角，其余相纸 */
-function picSt(){var id=styleId();return id==="film"?4:/^(swiss|mono|eink|brutal|bigtype|news|receipt|constructivist|bauhaus)$/.test(id)?1:/^(neo|memphis|y2k|washi|pixel)$/.test(id)?3:0}
-/* 对话便签：三种形——便签（撕边、胶带）/ 聊天（气泡）/ 小卡；对着前四张照片说的，头上带那张的小图 */
-var DQF=[["note","便签"],["chat","聊天"],["card","小卡"]];
-/* (1107) 她：「我们原来是点击能展开……你确定是分别的对话能展开关闭吗」——平时只露头一句，点「展开」整组摊开（浮在上面，不推下面），再点收起；
-   每张各管各的。按钮用页面原来那套（.qnote 里的 .qmore：页面的手势那段拦住它切 .open、换「展开 / 收起」、轻震一下，不会拖动贴纸） */
-function dqHTML(q,st){var f=DQF[(st||0)%DQF.length][0],L=q.L,src=q.k&&q.k.indexOf("ph:")===0?q.k.slice(3):"";
- var th=src&&!extraOf(q.d||cur()).some(function(p){return p.src===src})?src:"";
- var ln=function(x){var w=x.w==="me"?"me":"her";return '<div class="l '+w+'"><p>'+h(x.p)+'</p><small>'+h(nm(w))+(x.t?" · "+h(x.t):"")+'</small></div>'};
- var more=L.length>1?'<div class="lines"><div>'+L.slice(1).map(ln).join("")+'</div></div><button class="more qmore" type="button"><span>展开</span><i>还有 '+(L.length-1)+' 句</i>'
-  +'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg></button>':'';
- return '<div class="dqc qnote f-'+f+'">'+(f==="note"?'<i class="tape"></i>':'')+'<div class="bd'+(f==="note"?' torn':'')+'"><div class="hd">'
-  +(th?'<img alt="" draggable="false" src="'+h(th)+'">':'')+'<b>'+h(q.g||"原话")+'</b><span class="n">'+L.length+' 句</span></div>'+ln(L[0])+more+'</div></div>'}
-if(typeof getItem==="function"){var _gi=getItem;getItem=function(c,k){
- if(c==="dq"){var q=qval(k);if(!q)return null;return {w:240,html:1,rs:1,n:"原话"+(q.g?" · "+q.g:""),forms:DQF.map(function(f){return f[1]}),make:function(t,st){return dqHTML(q,st)}}}
- if(c!=="dpic")return _gi.apply(this,arguments);var d=val(k);if(!d)return null;
- return {w:170,html:1,rs:1,n:d.n||((d.t?d.t+" ":"")+"那天的照片"),forms:PICF.map(function(f){return f[1]}),
-  make:function(t,st){st=st||0;var nt=noteOf(d);return '<figure class="pic f-'+PICF[st%PICF.length][0]+'"><div class="im"><img alt="" draggable="false" src="'+h(d.s)+'"></div><figcaption class="mt'+(nt?' dnote':'')+'" contenteditable="true" spellcheck="false" data-ph="'+h(nt||"写一句")+'"></figcaption></figure>'}}}}
-function caps(){[].forEach.call(document.querySelectorAll("#page .stk.c-dpic .pic .mt"),function(mt){var s=mt.closest(".stk"),d=s&&val(s.dataset.k);if(!d)return;
- var nt=noteOf(d),ph=nt||"写一句";if(mt.getAttribute("data-ph")!==ph)mt.setAttribute("data-ph",ph);
- if(mt.classList.contains("dnote")!==!!nt){if(nt)mt.classList.add("dnote");else mt.classList.remove("dnote")}})}   /* 只在真变了的时候动 class（1007） */
+function isX(k){return /^x-/.test(String(k||""))}
+function hk(s){var x=5381;s=String(s);for(var i=0;i<s.length;i++)x=((x<<5)+x+s.charCodeAt(i))|0;return (x>>>0).toString(36)}
+function tm(t){var m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null}
 /* 原话分组：chat[].g（那件事）、chat[].ph（对着 photos 第几张，或照片地址）。一句都没给就是老样子，不分 */
 function phOf(R){return ((R&&R.photos)||[]).filter(function(p){return p&&p.src})}
 function heroOf(ph){for(var i=0;i<ph.length;i++)if(ph[i].role==="hero")return ph[i];return ph[0]||null}
@@ -3362,90 +3340,135 @@ function groups(R){var ch=((R&&R.chat)||[]).filter(function(x){return x&&x.p&&x.
  return G}
 function heroGroup(R,G){var hr=heroOf(phOf(R));if(hr)for(var i=0;i<G.length;i++)if(G[i].src===hr.src)return G[i];return G[0]}
 window.__heroSay=function(R,chat){try{var G=groups(R);if(!G)return chat;var g=heroGroup(R,G);return g?g.L:chat}catch(e){return chat}};
-function mine(s){var w=s.querySelector(".who");return !!(w&&w.classList.contains("me"))}
-function ratio(src){return new Promise(function(ok){var im=new Image(),t=setTimeout(function(){ok(1.33)},30000);   /* 网慢时竖长的照片没量到就按 1.33 排 */
- im.onload=function(){clearTimeout(t);ok(im.naturalWidth?im.naturalHeight/im.naturalWidth:1.33)};im.onerror=function(){clearTimeout(t);ok(1.33)};im.src=src})}
-function hOf(el,r){var im=el.querySelector("img");if(!im||!r)return el.offsetHeight;return el.offsetHeight-im.offsetHeight+Math.round(im.clientWidth*r)}
-function setBox(el,x,w,r){el.style.left=Math.round(x)+"px";el.style.setProperty("--w",Math.round(w)+"px");el.style.setProperty("--r",(+r).toFixed(2)+"deg")}
-/* 这一截的贴纸：从这页风格的装饰池里挑（跟「装饰」开关是一个池子），只要小的、不要胶带和花边 */
-function decoPick(n){try{var id=styleId(),pool=DECO_POOL[DECO_OF[id]||"soft"]().filter(function(a){return a[0]!=="tape"&&a[0]!=="line"&&getItem(a[0],a[1])});
+/* 旧版贴纸的 key（照着 1105～1107 的写法解） */
+function val(k){try{var d=JSON.parse(decodeURIComponent(String(k).slice(2)));return d&&d.s?d:null}catch(e){return null}}
+function qval(k){try{var d=JSON.parse(decodeURIComponent(String(k).slice(2)));return d&&Array.isArray(d.L)&&d.L.length?d:null}catch(e){return null}}
+function old(P){var S=Array.isArray(P.stk)?P.stk:[],dp={},dq={},any=false;
+ S.forEach(function(o){if(!o)return;if(o.c==="dpic"){any=true;var d=val(o.k);if(d)dp[d.s]=1}if(o.c==="dq"){any=true;var q=qval(o.k);if(q)dq[q.k]=1}});
+ var tp={},tg={};(Array.isArray(P.dpic)?P.dpic:[]).forEach(function(s){if(!dp[s])tp[s]=1});(Array.isArray(P.dq)?P.dq:[]).forEach(function(k){if(!dq[k])tg[k]=1});
+ return {any:any,tornP:tp,tornG:tg}}
+/* 这一天后面要排的几块 */
+/* 旧版里她撕掉的：头一回换过来时记进页里（PAGE.xtorn / xtornG），以后照这份算——换过来存过一次，旧贴纸就不在存档里了，不能再现算 */
+function torn(P){if(!Array.isArray(P.xtorn)){var o=old(P);P.xtorn=Object.keys(o.tornP);P.xtornG=Object.keys(o.tornG)}
+ var tp={},tg={};P.xtorn.forEach(function(s){tp[s]=1});(P.xtornG||[]).forEach(function(k){tg[k]=1});return {tornP:tp,tornG:tg}}
+function build(day,P){var R=live(day),L=extraOf(day).slice(0,MAXP),G=R?groups(R):null,hg=G?heroGroup(R,G):null,o=torn(P);
+ var gOf={},ex={},U=[],last=-1;if(G)G.forEach(function(g){if(g.src)gOf[g.src]=g});L.forEach(function(p){ex[p.src]=1});
+ L.forEach(function(p,i){var g=gOf[p.src];if(g===hg)g=null;U.push({p:p,g:g||null,t:tm(p.t),i:i})});
+ if(G)G.forEach(function(g,j){if(g===hg||(g.src&&ex[g.src]))return;U.push({g:g,t:tm(g.L[0].t),i:1000+j})});
+ U.forEach(function(u){if(u.t==null)u.t=last;else last=u.t});     /* 没钟点的跟着前一块走 */
+ U.sort(function(a,b){return a.t-b.t||a.i-b.i});
+ var out=[],lone=function(x){return x&&x.p&&!x.g&&String(x.p.note||"").length<=SHORT&&!o.tornP[x.p.src]};   /* 字少、没对话的两张并一块 */
+ for(var i=0;i<U.length;i++){var u=U[i],v=U[i+1];
+  if(lone(u)&&lone(v)){out.push({kind:"pp",a:u.p,b:v.p,k:"x-"+hk("pp:"+u.p.src+"|"+v.p.src),t:u.p.t||v.p.t||""});i++;continue}
+  if(u.p)out.push({kind:"p",p:u.p,g:u.g,k:"x-"+hk("p:"+u.p.src),t:u.p.t||"",torn:!!o.tornP[u.p.src]});
+  else out.push({kind:"g",g:u.g,k:"x-"+hk("g:"+u.g.k),t:u.g.L[0].t||"",torn:!!o.tornG[u.g.k]})}
+ return out}
+function nameOf(u){var t=u.t?" · "+u.t:"";return u.kind==="pp"?"两张照片"+t:u.kind==="p"?"照片"+(u.g?"和原话":"")+t:"原话 · "+(u.g.g||u.t||"")}
+/* 主照片那块的样子：胶片框（边条是参数，背面翻过来看）、撕边纸条、说明 */
+function dms(v,a,b){try{return DMS(v,a,b)}catch(e){return (+v).toFixed(4)}}
+function exif(p){var e=[];if(p.focal)e.push((+p.focal).toFixed(2)+"mm "+(p.lens||(p.focal>10?"长焦":"主摄")));if(p.f)e.push("f/"+p.f);if(p.shutter)e.push(p.shutter);if(p.iso)e.push("ISO "+p.iso);return e}
+function film(p,day,R){var edge=["▸ "+(p.t||day)].concat(exif(p),R&&R.en?[String(R.en).toUpperCase().slice(0,12)]:[]);
+ var back=[["TIME",p.t||day]].concat(p.f?[["APERTURE","f/"+p.f]]:[],p.shutter?[["SHUTTER",p.shutter]]:[],p.iso?[["ISO",String(p.iso)]]:[],[["WHERE",p.where||(R&&R.at)||""]]);
+ var full=p.lat!=null&&p.lon!=null?dms(p.lat,"N","S")+" "+dms(p.lon,"E","W")+(p.model?" · "+p.model:"")+" · 再点一下翻回去":(p.note||"");
+ return '<figure class="film" style="margin-bottom:0"><div class="card"><div class="face"><img alt="'+h(p.note||"")+'" draggable="false" src="'+h(p.src)+'"><div class="edge">'
+  +edge.map(function(x){return "<span>"+h(x)+"</span>"}).join("")+'</div></div><div class="back">'
+  +back.map(function(b){return "<div><small>"+h(b[0])+"</small><b>"+h(b[1])+"</b></div>"}).join("")+'<div class="full">'+h(full)+'</div></div></div></figure>'}
+function tornNote(g,seed,th){var L=g.L,t0=L[0].t||"",t1=L[L.length-1].t||"",tt=t0?t0+(t1&&t1!==t0?" – "+t1:"")+" · ":"";
+ var ln=function(x){return '<div class="ln '+(x.w==="me"?"me":"her")+'">'+h(x.p)+'<span class="t">'+h(x.t||"")+'</span></div>'};
+ return '<div class="note-wrap"><div class="tape"></div><div class="torn" data-seed="'+seed+'"><div class="hd"><span class="mono">'+(th?'<img class="xth" alt="" draggable="false" src="'+h(th)+'">':'')
+  +h(tt+(g.g||"原话"))+'</span><span class="mono">'+L.length+' 句</span></div><div class="first'+(L[0].w==="me"?" me":"")+'">'+h(L[0].p)+'</div>'
+  +(L.length>1?'<div class="lines"><div>'+L.slice(1).map(ln).join("")+'</div></div><button class="more tap" type="button"><span>展开</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg></button>':'')
+  +'</div></div>'}
+function tear(el,seed){try{var r=rng(seed),top=[],bot=[];for(var i=0;i<=40;i++)top.push((i*2.5)+"% "+(r()*1.6).toFixed(2)+"%");
+ for(var j=40;j>=0;j--)bot.push((j*2.5)+"% "+(100-r()*2.6).toFixed(2)+"%");el.style.clipPath="polygon("+top.join(",")+","+bot.join(",")+")"}catch(e){}}
+function html(u,day){var R=live(day),seed=parseInt(u.k.slice(2),36)%100000+7;
+ if(u.kind==="pp")return [u.a,u.b].map(function(p){return '<div class="xpc">'+film(p,day,R)+(p.note?'<div class="cap"><span>'+h(p.note)+'</span></div>':'')+'</div>'}).join("");
+ if(u.kind==="p")return film(u.p,day,R)+(u.g?tornNote(u.g,seed,""):"")+'<div class="cap" style="margin-top:10px"><span>'+h(u.p.note||"")+'</span><span class="mono">点照片看参数</span></div>';
+ var src=u.g.src,th=src&&!extraOf(day).some(function(p){return p.src===src})?src:"";     /* 对着正文里双联、截图那几张说的：头上带那张的小图 */
+ return tornNote(u.g,seed,th)}
+var busy=false;
+function mine(day){var p=pg();return p?[].slice.call(p.querySelectorAll(":scope>.blk.xb")).filter(function(b){return b.dataset.day===day}):[]}
+var mo=new MutationObserver(function(){var P=pageObj();if(P&&!busy)syncHide(P);sched()});
+function syncHide(P){var day=cur(),bs=mine(day),here={};bs.forEach(function(b){here[b.dataset.b]=1});
+ var keep=(Array.isArray(P.xhide)?P.xhide:[]).filter(function(k){return !here[k]});
+ P.xhide=keep.concat(bs.filter(function(b){return b.classList.contains("tune-off")}).map(function(b){return b.dataset.b}))}
+function render(day){day=String(day||"");var p=pg(),P=pageObj();if(!p||!P||!day||day!==cur())return;
+ unhold(day);
+ busy=true;
+ try{var first=!Array.isArray(P.xtorn),U=build(day,P),want={};U.forEach(function(u){want[u.k]=u});
+  var have={};[].forEach.call(p.querySelectorAll(":scope>.blk.xb"),function(b){if(b.dataset.day!==day||!want[b.dataset.b])b.remove();else have[b.dataset.b]=b});
+  if(first||!Array.isArray(P.xhide))P.xhide=(Array.isArray(P.xhide)?P.xhide:(P.hide||[]).filter(isX)).concat(first?U.filter(function(u){return u.torn}).map(function(u){return u.k}):[]);
+  var at=null;[].forEach.call(p.querySelectorAll(":scope>.blk:not(.xb)"),function(b){at=b});
+  U.forEach(function(u){var b=have[u.k],sig=hk(JSON.stringify([u.kind,u.p||u.a,u.b||null,u.g||null]));
+   if(!b){b=document.createElement("div");b.dataset.b=u.k;b.dataset.day=day;mo.observe(b,{attributes:true,attributeFilter:["class"]})}
+   if(b.dataset.sig!==sig){b.className="blk xb "+(u.kind==="pp"?"pair":"hero")+(u.kind==="g"?" nophoto xq":"");b.innerHTML=html(u,day);b.dataset.sig=sig;
+    [].forEach.call(b.querySelectorAll(".torn[data-seed]"),function(t){tear(t,+t.dataset.seed)})}
+   b.classList.toggle("tune-off",P.xhide.indexOf(u.k)>=0);b.dataset.xt=u.t||"";
+   try{BLK_N[u.k]=nameOf(u)}catch(e){}
+   var nx=at?at.nextElementSibling:p.firstElementChild;if(nx!==b)p.insertBefore(b,nx);at=b});
+  lay()}catch(e){console.warn("xb",e)}finally{busy=false}
+ settle(day)}
+/* 排行：看得见的从 xt 1 往下数，一块一行；这几块之间对调过的按对调后的先后 */
+function lay(){var p=pg();if(!p)return;var bs=mine(cur()),A=((pageObj()||{}).area)||{},idx={},n=0;bs.forEach(function(b,i){idx[b.dataset.b]=i});
+ bs.map(function(b,i){var s=A[b.dataset.b];return {b:b,o:(s&&isX(s)&&idx[s]!=null)?idx[s]:i,i:i}}).sort(function(x,y){return x.o-y.o||x.i-y.i}).forEach(function(x){var b=x.b;
+  if(b.dataset.t!==(b.dataset.xt||""))b.dataset.t=b.dataset.xt||"";      /* 时间线版式按这个标钟点；换天时页面会把它清空，这里补回去 */
+  var vis=getComputedStyle(b).display!=="none",w=vis?++n:0;
+  /* 正文那段「对调」每次重排都把所有板块的 grid-area 清空（连带这里写的这一行），所以每回都看它还在不在 */
+  if(String(w)!==b.dataset.xn||(w&&!b.style.gridRowStart)){b.style.gridRow=w?"xt "+w+" / span 1":"";b.dataset.xn=w}
+  if(vis){var l=n%2===0;if(b.classList.contains("xl")!==l)b.classList.toggle("xl",l)}})}
+var raf=0;function sched(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;try{lay()}catch(e){}})}
+/* 点开收起、翻面：跟主照片那块一样 */
+document.addEventListener("click",function(e){var t=e.target;if(!t||!t.closest)return;var b=t.closest("#page>.blk.xb");if(!b)return;
+ var mr=t.closest(".more");if(mr){var w=mr.closest(".note-wrap");if(!w)return;var o=!w.classList.contains("open");w.classList.toggle("open",o);var s=mr.querySelector("span");if(s)s.textContent=o?"收起":"展开";try{buzz()}catch(x){}return}
+ var cd=t.closest(".film .card");if(cd){cd.closest(".film").classList.toggle("flip");try{buzz()}catch(x){}}});
+/* 头一回见到这一页（PAGE.flow 不是 4）：旧版那批换过来、配两张小贴纸。要等那天的存档从家里拿回来（_PAGEGATE），等照片都出来量得准 */
+function imgs(bs){return Promise.all([].concat.apply([],bs.map(function(b){return [].slice.call(b.querySelectorAll("img"))})).map(function(im){
+ return im.complete?0:new Promise(function(ok){var t=setTimeout(ok,30000);im.addEventListener("load",function(){clearTimeout(t);ok()},{once:true});im.addEventListener("error",function(){clearTimeout(t);ok()},{once:true})})}))}
+function decoPick(n){try{var id=document.documentElement.getAttribute("data-style")||"qingmo",on={};[].forEach.call(document.querySelectorAll("#page .stk.placed"),function(s){on[s.dataset.c+"|"+s.dataset.k]=1});
+ var pool=DECO_POOL[DECO_OF[id]||"soft"]().filter(function(a){return a[0]!=="tape"&&a[0]!=="line"&&!on[a[0]+"|"+a[1]]&&getItem(a[0],a[1])});   /* 纸上已经有的不挑，别跟页顶那张撞 */
  var out=[],used={};for(var i=0;i<40&&out.length<n&&pool.length;i++){var a=pool[Math.floor(Math.random()*pool.length)];if(used[a[0]+a[1]])continue;used[a[0]+a[1]]=1;out.push(a)}return out}catch(e){return []}}
-var running=false;
-function run(day){
- if(running||!day||cur()!==String(day))return;
- /* 那天的存档还没从家里拿回来就先不贴：贴了页面会自己存一次，盖掉家里那份（_PAGEGATE） */
- if(window.__pageReady&&!window.__pageReady(day)){later(day,600);return}
- var P0=pageObj(),pg=document.getElementById("page");if(typeof place!=="function"||!P0||!pg)return;
- var R=live(day),L=extraOf(day),G=R?groups(R):null,hg=G?heroGroup(R,G):null;
- var dDone=Array.isArray(P0.dpic)?P0.dpic:[],qDone=Array.isArray(P0.dq)?P0.dq:[];
- var cards={},notes={};
- [].forEach.call(pg.querySelectorAll(".stk.c-dpic"),function(s){var d=val(s.dataset.k);if(d&&mine(s))cards[d.s]=s});
- [].forEach.call(pg.querySelectorAll(".stk.c-dq"),function(s){var d=qval(s.dataset.k);if(d&&mine(s))notes[d.k]=s});
- var photos=L.filter(function(p){return cards[p.src]||dDone.indexOf(p.src)<0}).slice(0,MAX);       /* 已经贴着的、还没贴过的；她撕掉的不回来 */
- var gl=G?G.filter(function(g){return g!==hg&&(notes[g.k]||qDone.indexOf(g.k)<0)}).slice(0,DQMAX):[];
- Object.keys(notes).forEach(function(k){if(!gl.some(function(g){return g.k===k})){var q=qval(notes[k].dataset.k);gl.push({k:k,src:k.indexOf("ph:")===0?k.slice(3):null,g:q.g,L:q.L,old:1})}});
- var fresh=photos.filter(function(p){return !cards[p.src]}).length+gl.filter(function(g){return !notes[g.k]||(!g.old&&notes[g.k].dataset.k!==qkey(g,day))}).length;
- if(!fresh&&P0.flow===3)return;                  /* 没有新的、也排过新样子了：不动（她挪过的不追着改） */
- if(!photos.length&&!gl.length)return;
- running=true;
- Promise.all(photos.map(function(p){return ratio(p.src)})).then(function(rs){
-  var was=restoring;
-  try{
-   if(cur()!==String(day)||pageObj()!==P0)return;
-   var W=pg.clientWidth,H0=pg.clientHeight,ext0=(+P0.ext)||0,M=Math.max(12,Math.round(W*.04)),RF=rotF(),inner=W-2*M;
-   /* 这一截从哪开始：板块最下面，和压在板块下面的她的东西（我这一截的和配的贴纸不算） */
-   var decoK=Array.isArray(P0.dqdeco)?P0.dqdeco:[],isMyDeco=function(s){return mine(s)&&decoK.indexOf(s.dataset.c+"|"+s.dataset.k)>=0};
-   var bottom=0;[].forEach.call(pg.querySelectorAll(":scope>.blk"),function(b){if(b.offsetParent&&getComputedStyle(b).display!=="none")bottom=Math.max(bottom,b.offsetTop+b.offsetHeight)});
-   var blkB=bottom;[].forEach.call(pg.querySelectorAll(".stk.placed:not(.deco)"),function(s){if(!s.offsetParent||s.offsetTop<blkB-10)return;if((s.classList.contains("c-dpic")||s.classList.contains("c-dq"))&&mine(s))return;if(isMyDeco(s))return;bottom=Math.max(bottom,s.offsetTop+s.offsetHeight)});
-   /* 先把纸加长够（贴的时候纸不够长，页面会把超出的位置收回纸里） */
-   if(typeof applyExt==="function"){P0.ext=ext0+photos.length*420+gl.length*320+400;applyExt()}
-   restoring=true;
-   var ratioOf={};photos.forEach(function(p,i){ratioOf[p.src]=rs[i]});
-   var gOf={};gl.forEach(function(g){if(g.src)gOf[g.src]=g});
-   var y0=bottom+28;
-   function card(p,x,w,r){var el=cards[p.src];if(el){setBox(el,x,w,r);return el}el=place("dpic",key(p),x,y0,"me",false,{r:r,w:Math.round(w),st:picSt()});cards[p.src]=el;return el}
-   function note(g,x,w,r){var el=notes[g.k],k2=g.old?null:qkey(g,day);
-    if(el&&k2&&el.dataset.k!==k2){el.remove();el=null}               /* 那组的话改了：换一张 */
-    if(el){setBox(el,x,w,r);return el}el=place("dq",k2,x,y0,"me",false,{r:r,w:Math.round(w)});notes[g.k]=el;return el}
-   /* 一行一行排：照片在上、那组对话压在照片下沿错开；左右换着来；字少的两张并一行 */
-   var units=photos.map(function(p){return {p:p,g:gOf[p.src]||null}}),usedG={};
-   units.forEach(function(u){if(u.g)usedG[u.g.k]=1});
-   gl.forEach(function(g){if(!usedG[g.k])units.push({g:g})});
-   var short=function(g){var n=g.L.reduce(function(a,x){return a+x.p.length},0);return g.L.length<=2&&n<=46};
-   var rows=[],side=0,i=0;
-   while(i<units.length){var u=units[i],nx=units[i+1],left=side%2===0;
-    if(u.p&&u.g){var cw=Math.round(inner*.6),nw=Math.round(inner*.72);
-     var c=card(u.p,left?M:W-M-cw,cw,(left?-1.6:1.6)*RF),n=note(u.g,left?W-M-nw:M,nw,(left?1.2:-1.2)*RF);
-     rows.push({kind:"stack",a:{el:c,r:ratioOf[u.p.src]},b:{el:n},left:left,cw:cw});side++;i++;continue}
-    if(u.p){var nt=String(u.p.note||"");
-     if(nt.length<=26&&nx&&nx.p&&!nx.g&&String(nx.p.note||"").length<=26){var w2=Math.round((inner-14)/2);
-      rows.push({kind:"pair",items:[{el:card(u.p,M,w2,-2*RF),r:ratioOf[u.p.src]},{el:card(nx.p,M+w2+14,w2,2*RF),r:ratioOf[nx.p.src]}]});i+=2;continue}
-     var cw2=Math.max(Math.round(inner*.56),Math.min(capW(nt),inner));
-     rows.push({kind:"one",items:[{el:card(u.p,left?M:W-M-cw2,cw2,(left?-1.5:1.5)*RF),r:ratioOf[u.p.src]}],left:left,cw:cw2});side++;i++;continue}
-    if(short(u.g)&&nx&&nx.g&&!nx.p&&short(nx.g)){var w3=Math.round((inner-14)/2);
-     rows.push({kind:"pair",items:[{el:note(u.g,M,w3,-1*RF)},{el:note(nx.g,M+w3+14,w3,1*RF)}]});i+=2;continue}
-    var nw2=Math.round(inner*.82);rows.push({kind:"one",items:[{el:note(u.g,left?M:W-M-nw2,nw2,(left?-1:1)*RF)}]});side++;i++}
-   /* 量真高度、从上往下重排 */
-   var y=y0;rows.forEach(function(row){
-    if(row.kind==="stack"){var ah=hOf(row.a.el,row.a.r);row.a.el.style.top=y+"px";row.b.el.style.top=(y+ah-OVER)+"px";row.top=y;row.h=ah-OVER+row.b.el.offsetHeight;y+=row.h+GAP;return}
-    var rh=0;row.items.forEach(function(o){o.el.style.top=y+"px";rh=Math.max(rh,hOf(o.el,o.r))});row.top=y;row.h=rh;y+=rh+GAP});
-   /* 配贴纸：每两组一张，贴在照片卡角上（对话那边的对角），只配一回 */
-   if(!decoK.length){var cardRows=rows.filter(function(r){return r.kind==="stack"||(r.kind==="one"&&r.items[0].el.classList.contains("c-dpic"))}).filter(function(r,j){return j%2===0}).slice(0,3);
-    var picks=decoPick(cardRows.length);
-    cardRows.forEach(function(row,j){var a=picks[j];if(!a)return;var el=row.kind==="stack"?row.a.el:row.items[0].el,it=getItem(a[0],a[1]),o=a[2]||{};
-     var w=Math.min(64,Math.round((o.w||it.w||60)*(o.sm||1)*.8)),x=row.left?el.offsetLeft+el.offsetWidth-w*.55:el.offsetLeft-w*.45;
-     var s=place(a[0],a[1],Math.max(4,Math.min(W-w-4,Math.round(x))),Math.max(0,row.top-Math.round(w*.45)),"me",false,Object.assign({},o,{w:w,r:Math.round((Math.random()*16-8)*Math.max(RF,.4))}));
-     if(s)decoK.push(a[0]+"|"+a[1])});P0.dqdeco=decoK}
-   if(typeof applyExt==="function"){P0.ext=ext0+Math.max(0,y+12-H0);applyExt()}
-   P0.dpic=dDone.concat(photos.map(function(p){return p.src}).filter(function(s){return dDone.indexOf(s)<0}));
-   P0.dq=qDone.concat(gl.map(function(g){return g.k}).filter(function(k){return qDone.indexOf(k)<0}));P0.flow=3;
-  }catch(e){console.warn("dpic",e)}finally{restoring=was;running=false}
- })}
-function later(day,ms){setTimeout(function(){try{caps()}catch(e){}run(day)},ms)}
-window.__dpicKick=function(day){later(day,700)};        /* 我刚写完那天、数据到了 */
-var _sd=window.journalSetDay;if(typeof _sd==="function")window.journalSetDay=function(k){var r=_sd.apply(this,arguments);later(k,800);return r};
-if(typeof restorePage==="function"){var _rp=restorePage;restorePage=function(P){var r=_rp.apply(this,arguments);later(cur(),400);return r}}
-window.__dpicRun=run;window.__dpicCaps=caps;
+var settling={};
+function settle(day){var P=pageObj();if(!P||P.flow===4||settling[day])return;
+ if(window.__pageReady&&!window.__pageReady(day)){setTimeout(function(){settle(day)},600);return}
+ var o=old(P),bs=mine(day);if(!bs.length&&!o.any)return;
+ settling[day]=1;
+ imgs(bs).then(function(){
+  try{if(cur()!==day||pageObj()!==P||P.flow===4)return;var p=pg();
+   /* 旧版我配的那几张小贴纸：按新板块重贴 */
+   var dk=Array.isArray(P.dqdeco)?P.dqdeco:[];
+   [].forEach.call(p.querySelectorAll(".stk.placed:not(.deco)"),function(s){var w=s.querySelector(".who");if(w&&w.classList.contains("me")&&dk.indexOf(s.dataset.c+"|"+s.dataset.k)>=0)s.remove()});
+   /* 纸长：旧版为了装那批贴纸加长过的收回来，留到刚好装下她贴的东西 */
+   if(o.any&&typeof applyExt==="function"){P.ext=0;applyExt();var nat=p.clientHeight,bot=0;
+    [].forEach.call(p.querySelectorAll(".stk.placed:not(.deco)"),function(s){bot=Math.max(bot,s.offsetTop+s.offsetHeight)});
+    P.ext=Math.max(0,Math.round(bot+24-nat));applyExt()}
+   var vis=mine(day).filter(function(b){return getComputedStyle(b).display!=="none"&&!b.classList.contains("xq")}),rows=vis.filter(function(b,j){return j%2===0}).slice(0,DECO),picks=decoPick(rows.length),P2=p.getBoundingClientRect(),W=p.clientWidth,dk2=[];
+   rows.forEach(function(b,j){var a=picks[j];if(!a)return;var it=getItem(a[0],a[1]),op=a[2]||{},r=(b.querySelector(".film .card")||b).getBoundingClientRect();   /* 贴在照片的角上，不是整块（整块是通栏的） */
+    var w=Math.min(64,Math.round((op.w||it.w||60)*(op.sm||1)*.8)),right=j%2===0,x=right?r.right-P2.left-w*.55:r.left-P2.left-w*.45,y=r.top-P2.top-w*.45;
+    var s=place(a[0],a[1],Math.max(4,Math.min(W-w-4,Math.round(x))),Math.max(0,Math.round(y)),"me",false,Object.assign({},op,{w:w,r:Math.round((Math.random()*16-8))}));
+    if(s)dk2.push(a[0]+"|"+a[1])});
+   P.dqdeco=dk2;P.flow=4;try{savePage()}catch(e){}
+  }catch(e){console.warn("xb settle",e)}finally{settling[day]=0}})}
+/* 什么时候排：打开一天、我刚写完那天（数据到了）、页面按存档重摆以后、换版式、正文那边挂起来放下来对调完 */
+window.__dpicKick=function(day){setTimeout(function(){render(day)},0);setTimeout(function(){render(day)},700)};
+var _sd=window.journalSetDay;if(typeof _sd==="function")window.journalSetDay=function(k){[].forEach.call(document.querySelectorAll("#page>.blk.xb"),function(b){b.remove()});
+ var r=_sd.apply(this,arguments);render(k);setTimeout(function(){render(k)},800);return r};
+/* 按存档摆贴纸（restorePage）会把超出纸底的贴纸收回纸里（1105 加长纸那回是同一个坑）。这截板块撑着纸长，所以：
+   摆之前先把这天的板块排出来；那天的数据还没到、排不出来，就先按存档里最靠下那张把纸撑够（#page 的 min-height），板块排出来再撤 */
+function ready(day){return !!(window.BZDPIC&&window.BZDPIC[day])}
+function hold(P){var p=pg(),day=cur();if(!p||!P||!Array.isArray(P.stk)||ready(day))return;var mx=0;
+ P.stk.forEach(function(o){if(o&&o.y!=null)mx=Math.max(mx,(+o.y||0)+(+o.h||80)+30)});if(mx>p.clientHeight){p.style.alignContent="start";p.style.minHeight=mx+"px";p.dataset.xhold=day}}   /* 格子不拉伸：多出来的高度别分给每一行，正文不挪 */
+function unhold(day){var p=pg();if(p&&p.dataset.xhold&&(p.dataset.xhold!==cur()||ready(cur()))){p.style.minHeight="";p.style.alignContent="";delete p.dataset.xhold}}
+/* 藏了哪几块：存档里的 hide 为准（撤回也只认 hide）。存档、拍撤回快照那一刻（undoNote），把这会儿还没排出来、但记着藏了的几块补进 hide，让它一直是全的 */
+if(typeof window.undoNote==="function"){var _un=window.undoNote;window.undoNote=function(P){try{var Q=pageObj();if(P&&Array.isArray(P.hide)&&Q&&Array.isArray(Q.xhide)){var here={};mine(cur()).forEach(function(b){here[b.dataset.b]=1});
+ Q.xhide.forEach(function(k){if(!here[k]&&P.hide.indexOf(k)<0)P.hide.push(k)})}}catch(e){}return _un.apply(this,arguments)}}
+if(typeof restorePage==="function"){var _rp=restorePage;restorePage=function(P){try{if(P&&P===pageObj()&&Array.isArray(P.hide)&&Array.isArray(P.xtorn))P.xhide=P.hide.filter(isX);render(cur());hold(P)}catch(e){}
+ var r=_rp.apply(this,arguments);try{render(cur())}catch(e){}return r}}
+if(typeof window.applyArea==="function"){var _aa=window.applyArea;window.applyArea=function(){
+ try{var A=pageObj()&&pageObj().area;if(A)Object.keys(A).forEach(function(k){if(isX(k)!==isX(A[k]))delete A[k]})}catch(e){}   /* 后面这几块跟正文的对调不了 */
+ var r=_aa.apply(this,arguments);try{lay()}catch(e){}return r}}       /* 它刚把这几块的位置清了，当场补回去，别等下一帧 */
+if(pg())new MutationObserver(sched).observe(pg(),{attributes:true,attributeFilter:["data-layout"]});
+window.__dpicRun=render;
+setTimeout(function(){render(cur())},0);
 })();
 </script>
 <script>/* 加长那截纸上的贴纸，重开时别被收回纸里（1105） */
