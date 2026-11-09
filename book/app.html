@@ -2026,7 +2026,7 @@ function movable(s){
   s.addEventListener("pointermove",mv);s.addEventListener("pointerup",up)})}
 /* 枫贴：挑一张跟这天有关系的，贴在某块的角上 */
 const MINE=[["kao","(◔_◔)"],["kao","ᶻ(˘ .˘)ᶻ"],["kao","٩(ˊᗜˋ*)و"],["clip","bug-yellow-mica",{st:1}],["emoji","seal"],["emoji","kangaroo"],["emoji","nauseated-face"],["emoji","camera-with-flash"],["emoji","ship"],["pet","sealion"],["word","yun"],["word","haochi",{t:"好冷！"}],["shape","circle"],["icon","waves|d|0"],["icon","boat|d|0"],["icon","camera|d|1"],["line","wave|0"],["tape","wiggle|2"],["stamp","date"],["wx","seal"],["pet","sheep"]];
-$("#meStick").onclick=()=>{const [c,k,o]=MINE[Math.floor(Math.random()*MINE.length)];const it=getItem(c,k);if(!it)return;
+$("#meStick").onclick=()=>{const [c,k,o]=(window.__mePick&&__mePick())||MINE[Math.floor(Math.random()*MINE.length)];const it=getItem(c,k);if(!it)return;
  const blocks=$$(".page>.blk").filter(b=>b.offsetParent!==null&&!["sp"].includes(b.dataset.b));const b=blocks[Math.floor(Math.random()*blocks.length)];
  const p=$("#page").getBoundingClientRect(),r=b.getBoundingClientRect();const w=it.w;const x=Math.random()<.5?r.left-p.left-w*.3:r.right-p.left-w*.7,y=r.top-p.top-14;
  const s=place(c,k,x,y,"me",true,o||{});s.scrollIntoView({behavior:"smooth",block:"center"});buzz(10);toast(NM("me")+"贴了一张「"+((o&&o.t)||it.def||it.n)+"」")};
@@ -3599,6 +3599,49 @@ window.__stkMissAdd=function(o){if(!window.__stkMiss||window.__stkMissDay!==day(
 window.__stkKeep=function(a){try{var m=window.__stkMiss||[];if(!m.length||window.__stkMissDay!==day())return a;
  var on=new Set(a.map(function(o){return o.c+"|"+o.k}));
  return a.concat(m.filter(function(o){return !on.has(o.c+"|"+o.k)}).map(function(o){return JSON.parse(JSON.stringify(o))}))}catch(e){return a}};
+})();
+</script>
+<script>/* 我做页时贴的贴纸、「让枫贴一张」从整个库抽（1109） */
+(function(){
+var HOME=/^\/benzi/.test(location.pathname);
+function today(){try{return typeof PAGE_DAY!=="undefined"?PAGE_DAY:null}catch(e){return null}}
+function lsGet(d){try{return JSON.parse(localStorage.getItem("journalMyStk:"+d)||"[]")}catch(e){return []}}
+function lsSet(d,a){try{localStorage.setItem("journalMyStk:"+d,JSON.stringify(a))}catch(e){}}
+function mine(day){try{
+ if(!day||today()!==day||typeof PAGE==="undefined"||!PAGE)return;
+ var R=(window.BZDR||{})[day];if(!R||!Array.isArray(R.mystk)||!R.mystk.length)return;
+ var pg=document.getElementById("page");if(!pg||!pg.offsetHeight)return;
+ var done=(Array.isArray(PAGE.mystk)?PAGE.mystk:[]).concat(lsGet(day));
+ var pr=pg.getBoundingClientRect(),put=[],n=0;
+ var vis=[].slice.call(pg.querySelectorAll(".blk")).filter(function(x){return x.offsetParent!==null&&!x.classList.contains("tune-off")});
+ R.mystk.slice(0,6).forEach(function(o,i){
+  if(!o||!o.c||o.k==null)return;var key=o.c+"|"+o.k;if(done.indexOf(key)>=0)return;
+  if(HOME&&o.c==="emoji")return;
+  var it=null;try{it=getItem(o.c,o.k)}catch(e){}if(!it)return;
+  var b=null;try{b=o.b?pg.querySelector('.blk[data-b="'+String(o.b).replace(/"/g,"")+'"]'):null}catch(e){}
+  if(!b||b.offsetParent===null||b.classList.contains("tune-off"))b=vis.length?vis[(i*2+1)%vis.length]:null;
+  if(!b)return;var r=b.getBoundingClientRect(),w=it.w||64,side=(n%2===0);
+  var x=side?r.right-pr.left-w*.7:r.left-pr.left-w*.3,y=r.top-pr.top-14+(n>1?Math.round(r.height*.45):0);
+  x=Math.max(4,Math.min(pr.width-w-4,x));
+  try{place(o.c,o.k,Math.round(x),Math.round(Math.max(0,y)),"me",false,{r:Math.round(Math.random()*12-6),t:o.t});put.push(key);n++}catch(e){}
+ });
+ if(put.length){PAGE.mystk=(Array.isArray(PAGE.mystk)?PAGE.mystk:[]).concat(put);lsSet(day,lsGet(day).concat(put));try{savePage()}catch(e){}}
+}catch(e){console.warn("mystk",e)}}
+window.__myStk=mine;
+var _k=window.__dpicKick;window.__dpicKick=function(day){var r=_k&&_k.apply(this,arguments);setTimeout(function(){mine(day)},1600);return r};
+var _sd=window.journalSetDay;if(typeof _sd==="function")window.journalSetDay=function(k){var r=_sd.apply(this,arguments);setTimeout(function(){mine(k)},1800);return r};
+/* 「让枫贴一张」：一类一票，再在那一类里随手挑 */
+window.__mePick=function(){try{
+ var pool={},skip={quote:1,mine:1};if(HOME)skip.emoji=1;
+ Object.keys(LIB).forEach(function(c){if(skip[c]||!LIB[c].items)return;var ks=Object.keys(LIB[c].items);if(ks.length)pool[c]=ks.map(function(k){return [c,k,{}]})});
+ try{pool.clip=CLIP.meta.map(function(m){return ["clip",m.k,{}]})}catch(e){}
+ try{pool.kao=KAOALL.map(function(t){return ["kao",t,{}]})}catch(e){}
+ try{pool.tape=Object.keys(HERO).map(function(p){return ["tape",p+"|"+Math.floor(Math.random()*6),{w:92}]})}catch(e){}
+ try{(typeof MINE!=="undefined"?MINE:[]).forEach(function(m){if(skip[m[0]]||pool[m[0]])return;(pool[m[0]]=pool[m[0]]||[]).push([m[0],m[1],m[2]||{}])})}catch(e){}
+ var cats=Object.keys(pool).filter(function(c){return pool[c]&&pool[c].length});
+ for(var t=0;t<8&&cats.length;t++){var c=cats[Math.floor(Math.random()*cats.length)],a=pool[c],p=a[Math.floor(Math.random()*a.length)];
+  try{if(getItem(p[0],p[1]))return p}catch(e){}}
+ return null}catch(e){return null}};
 })();
 </script>
 <script>/* 交给的时候读原图的拍摄信息（1018）：缩图之前读，读不出来就算了，不编 */
