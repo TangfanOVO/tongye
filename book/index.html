@@ -2089,15 +2089,15 @@ setTimeout(()=>{const d=$(".dices");if(!d)return;d.insertAdjacentHTML("beforeend
 const BLK_N={sp:"书脊条",ti:"题签",wx:"天气签",p1:"正文",he:"主照片和原话便签",ro:"路线",sh:"截图",p2:"截图说明",qu:"引言",pa:"双联照",an:"照片批注",pe:"红笔段落",su:"快门条",tk:"票根",en:"邮戳和批章"};
 let PAGE={stk:null,hide:[],ts:0};try{Object.assign(PAGE,JSON.parse(localStorage.getItem("journalPage:"+PAGE_DAY)||"{}"))}catch(e){}
 let restoring=false,pageRef=null,saveP;
-function snapStk(){return $$("#page .stk.placed:not(.deco)").map(x=>{const o={c:x.dataset.c,k:x.dataset.k,who:x.querySelector(".who")?.classList.contains("me")?"me":"her",x:Math.round(parseFloat(x.style.left)),y:Math.round(parseFloat(x.style.top)),
+function snapStk(){return (window.__stkKeep||(a=>a))($$("#page .stk.placed:not(.deco)").map(x=>{const o={c:x.dataset.c,k:x.dataset.k,who:x.querySelector(".who")?.classList.contains("me")?"me":"her",x:Math.round(parseFloat(x.style.left)),y:Math.round(parseFloat(x.style.top)),
  r:parseFloat(x.style.getPropertyValue("--r"))||0,s:parseFloat(x.style.getPropertyValue("--s"))||1,w:parseFloat(x.style.getPropertyValue("--w"))||null};if(x.dataset.t)o.t=x.dataset.t;if(x.dataset.st)o.st=+x.dataset.st;if(x.classList.contains("sized"))o.h=Math.round(x.offsetHeight);
- const mt=x.querySelector(".mt");if(mt)o.m=mt.innerText.slice(0,4000);if(x.id==="meSticker")o.me1=1;if(x.classList.contains("under"))o.u=1;return o})}
+ const mt=x.querySelector(".mt");if(mt)o.m=mt.innerText.slice(0,4000);if(x.id==="meSticker")o.me1=1;if(x.classList.contains("under"))o.u=1;return o}))}
 let pDirty=false;function flushPage(){clearTimeout(saveP);if(!pDirty)return;pDirty=false;PAGE.stk=snapStk();window.__followLay&&__followLay();PAGE.hide=$$("#page .blk.tune-off").map(b=>b.dataset.b);PAGE.ts=Date.now();const d=PAGE_DAY,P=JSON.parse(JSON.stringify(PAGE));window.undoNote&&undoNote(P);try{localStorage.setItem("journalPage:"+d,JSON.stringify(P))}catch(e){}if(pageRef)pageRef.set(P).catch(()=>{})}
 function savePage(){if(restoring)return;if(window.__pageHold?__pageHold():(window.claude&&!window.__jdb&&(window.__pageHeld=1)))return;pDirty=true;clearTimeout(saveP);saveP=setTimeout(async()=>{pDirty=false;PAGE.stk=snapStk();window.__followLay&&__followLay();PAGE.hide=$$("#page .blk.tune-off").map(b=>b.dataset.b);PAGE.ts=Date.now();
  window.undoNote&&undoNote(PAGE);try{localStorage.setItem("journalPage:"+PAGE_DAY,JSON.stringify(PAGE))}catch(e){}if(pageRef)try{await pageRef.set(JSON.parse(JSON.stringify(PAGE)))}catch(e){}},700)}
-function restorePage(P){restoring=true;$$("#page .stk.placed:not(.deco)").forEach(x=>x.remove());$$("#page .blk").forEach(b=>b.classList.toggle("tune-off",(P.hide||[]).includes(b.dataset.b)));
- (P.stk||[]).forEach(o=>{try{if(!getItem(o.c,o.k))return;const el=place(o.c,o.k,o.x,o.y,o.who,false,{t:o.t,st:o.st,r:o.r,w:o.w,h:o.h});el.style.setProperty("--s",o.s||1);if(o.a){el.dataset.ab=o.a.b;el.dataset.afx=o.a.fx;el.dataset.afy=o.a.fy;if(o.a.px!=null){el.dataset.apx=o.a.px;el.dataset.apy=o.a.py}}
-  if(o.m!=null){const mt=el.querySelector(".mt");if(mt)mt.innerText=o.m}if(o.me1)el.id="meSticker";if(o.u){el.classList.add("under");$("#page").prepend(el)}}catch(e){}});restoring=false}
+function restorePage(P){restoring=true;window.__stkMissReset&&__stkMissReset();$$("#page .stk.placed:not(.deco)").forEach(x=>x.remove());$$("#page .blk").forEach(b=>b.classList.toggle("tune-off",(P.hide||[]).includes(b.dataset.b)));
+ (P.stk||[]).forEach(o=>{try{if(!getItem(o.c,o.k)){window.__stkMissAdd&&__stkMissAdd(o);return}const el=place(o.c,o.k,o.x,o.y,o.who,false,{t:o.t,st:o.st,r:o.r,w:o.w,h:o.h});el.style.setProperty("--s",o.s||1);if(o.a){el.dataset.ab=o.a.b;el.dataset.afx=o.a.fx;el.dataset.afy=o.a.fy;if(o.a.px!=null){el.dataset.apx=o.a.px;el.dataset.apy=o.a.py}}
+  if(o.m!=null){const mt=el.querySelector(".mt");if(mt)mt.innerText=o.m}if(o.me1)el.id="meSticker";if(o.u){el.classList.add("under");$("#page").prepend(el)}}catch(e){window.__stkMissAdd&&__stkMissAdd(o)}});restoring=false}
 new MutationObserver(ms=>{if(ms.some(m=>[...m.addedNodes,...m.removedNodes].some(n=>n.classList&&n.classList.contains("placed")&&!n.classList.contains("deco"))||(m.type==="attributes"&&m.target.classList.contains("placed")&&!m.target.classList.contains("deco"))))savePage()})
  .observe($("#page"),{childList:true,subtree:true,attributes:true,attributeFilter:["style","data-t","data-st","class"]});
 $("#page").addEventListener("input",e=>{if(e.target.closest(".stk.placed"))savePage()});
@@ -2178,8 +2178,8 @@ $("#genSave").onclick=()=>{const n=(GENS.reduce((a,g)=>Math.max(a,g.n),0))+1;GEN
  if(GENS.length>20)GENS=GENS.slice(-20);genCur=n;persistGens();renderGens();buzz(12);toast(`存好了：第 ${n} 代`)};
 function loadGen(n){const g=GENS.find(x=>x.n===n);if(!g)return;window.genLock=Date.now();closeSave();
  setTimeout(()=>{applyLayout(g.layout,{instant:true});applyStyle(g.style,{instant:true});
-  setTimeout(()=>{restoring=true;$$("#page .stk.placed").forEach(x=>x.remove());$$("#page .blk").forEach(b=>b.classList.toggle("tune-off",(g.hide||[]).includes(b.dataset.b)));
-   g.stk.forEach(o=>{try{if(!getItem(o.c,o.k))return;const el=place(o.c,o.k,o.x,o.y,o.who,false,{t:o.t,st:o.st,r:o.r,w:o.w,h:o.h,deco:o.d});el.style.setProperty("--s",o.s||1);if(o.m!=null){const mt=el.querySelector(".mt");if(mt)mt.innerText=o.m}if(o.me1)el.id="meSticker";if(o.u){el.classList.add("under");$("#page").prepend(el)}}catch(e){}});
+  setTimeout(()=>{restoring=true;window.__stkMissReset&&__stkMissReset();$$("#page .stk.placed").forEach(x=>x.remove());$$("#page .blk").forEach(b=>b.classList.toggle("tune-off",(g.hide||[]).includes(b.dataset.b)));
+   g.stk.forEach(o=>{try{if(!getItem(o.c,o.k)){window.__stkMissAdd&&__stkMissAdd(o);return}const el=place(o.c,o.k,o.x,o.y,o.who,false,{t:o.t,st:o.st,r:o.r,w:o.w,h:o.h,deco:o.d});el.style.setProperty("--s",o.s||1);if(o.m!=null){const mt=el.querySelector(".mt");if(mt)mt.innerText=o.m}if(o.me1)el.id="meSticker";if(o.u){el.classList.add("under");$("#page").prepend(el)}}catch(e){window.__stkMissAdd&&__stkMissAdd(o)}});
    restoring=false;decoOn=!!g.deco;try{localStorage.setItem("journal-deco",decoOn?"1":"0")}catch(e){}const db=$("#decoBtn");if(db){db.setAttribute("aria-pressed",decoOn);db.setAttribute("aria-checked",decoOn)}genCur=n;savePage();drawPins();toast(`换回第 ${n} 代`)},1000)},280)}
 function openSave(){renderGens();$("#scrim").classList.add("on");$("#saveS").classList.add("on");buzz()}
 function closeSave(){$("#saveS").classList.remove("on");if(!$(".sheet.on"))$("#scrim").classList.remove("on")}
@@ -3645,6 +3645,19 @@ window.__shotFontCSS=fontCSS;
 window.__shotPrep=async function(pg,opt){
  try{opt.filter=keepFacing(opt.filter,pg)}catch(e){}
  try{var fc=await Promise.race([fontCSS(pg),new Promise(function(r){setTimeout(function(){r("")},20000)})]);if(fc)opt.fontEmbedCSS=fc}catch(e){}};
+})();
+</script>
+<script>/* 摆页时还认不出来的贴纸，存的时候原样带上（1109） */
+(function(){
+function day(){try{return typeof PAGE_DAY!=="undefined"?PAGE_DAY:null}catch(e){return null}}
+window.__stkMissReset=function(){window.__stkMiss=[];window.__stkMissDay=day()};
+function key(o){return o.c+"|"+o.k+"|"+o.x+"|"+o.y}
+/* 同一次摆回去，那一段可能被别的补丁连着跑几遍：同一类、同一张、同一个位置只记一次 */
+window.__stkMissAdd=function(o){if(!window.__stkMiss||window.__stkMissDay!==day()){window.__stkMiss=[];window.__stkMissDay=day()}
+ if(!window.__stkMiss.some(function(x){return key(x)===key(o)}))window.__stkMiss.push(o)};
+window.__stkKeep=function(a){try{var m=window.__stkMiss||[];if(!m.length||window.__stkMissDay!==day())return a;
+ var on=new Set(a.map(function(o){return o.c+"|"+o.k}));
+ return a.concat(m.filter(function(o){return !on.has(o.c+"|"+o.k)}).map(function(o){return JSON.parse(JSON.stringify(o))}))}catch(e){return a}};
 })();
 </script>
 <script>/* 交给的时候读原图的拍摄信息（1018）：缩图之前读，读不出来就算了，不编 */
