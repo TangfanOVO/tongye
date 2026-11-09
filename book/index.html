@@ -2189,7 +2189,7 @@ setTimeout(()=>{$("#cfgBtn").insertAdjacentHTML("beforebegin",`<button class="ta
 $("#shotBtn").onclick=async()=>{const b=$("#shotBtn");b.textContent="正在画…";select(null);$$(".npop").forEach(x=>x.remove());
  const pg=$("#page");const opt={pixelRatio:2,backgroundColor:getComputedStyle(pg).backgroundColor,cacheBust:false,
   filter:n=>!(n.classList&&(n.classList.contains("npin")||n.classList.contains("rsz")||n.id==="stkbar"))};
- pg.classList.add("shooting");let url;try{url=await htmlToImage.toPng(pg,opt);url=await htmlToImage.toPng(pg,opt)}catch(e){try{url=await htmlToImage.toPng(pg,Object.assign({},opt,{skipFonts:true}))}catch(e2){pg.classList.remove("shooting");b.textContent="存成长图";toast("没画出来，再点一次试试");return}}
+ pg.classList.add("shooting");if(window.__shotPrep)await __shotPrep(pg,opt);let url;try{url=await htmlToImage.toPng(pg,opt);url=await htmlToImage.toPng(pg,opt)}catch(e){try{url=await htmlToImage.toPng(pg,Object.assign({},opt,{skipFonts:true,fontEmbedCSS:null}))}catch(e2){pg.classList.remove("shooting");b.textContent="存成长图";toast("没画出来，再点一次试试");return}}
  pg.classList.remove("shooting");b.textContent="存成长图";closeSave();const ov=document.createElement("div");ov.className="shot";
  ov.innerHTML=`<div class="bar"><button class="tap go" data-ph>存到相册</button><button class="tap" data-dl>存到文件</button><button class="tap" data-x>关掉</button><span class="tip" data-tip>也可以长按图片存</span></div><img alt="这一页的长图" src="${url}">`;document.body.appendChild(ov);
  ov.querySelector("[data-x]").onclick=()=>ov.remove();
@@ -3589,6 +3589,63 @@ setTimeout(function(){if(J)return;var r=null;try{r=pageRef}catch(e){}if(!r){OPEN
 getItem=function(c,k){var it=_g.apply(this,arguments);
  if(c!=="clip"||!it||!/^(nzb|brd)-/.test(String(k))||typeof CLIP==="undefined"||!CLIP.cut||!CLIP.cut[k])return it;
  var mk=it.make;return Object.assign({},it,{forms:["去底","白边胶带","原图"],make:function(t,st){return mk(t,[1,0,2][st||0])}})}})();
+</script>
+<script>/* 存成长图：带上这一页用到的字体、不画朝里的那一面（1109） */
+(function(){
+var css={},dat={};
+function getText(u){return css[u]||(css[u]=fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.text()}))}
+function getData(u){return dat[u]||(dat[u]=fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.blob()}).then(function(b){return new Promise(function(ok,no){var f=new FileReader();f.onload=function(){ok(f.result)};f.onerror=no;f.readAsDataURL(b)})}))}
+function fams(s){return (s||"").split(",").map(function(x){return x.trim().replace(/^["']|["']$/g,"").toLowerCase()}).filter(Boolean)}
+function prop(b,n){var m=b.match(new RegExp("(?:^|[;{\\s])"+n+"\\s*:\\s*([^;]+)","i"));return m?m[1].trim():""}
+function ranges(s){if(!s)return null;return s.split(",").map(function(r){r=r.trim().replace(/^u\+/i,"");if(r.indexOf("?")>=0)return [parseInt(r.replace(/\?/g,"0"),16),parseInt(r.replace(/\?/g,"f"),16)];var p=r.split("-");return [parseInt(p[0],16),parseInt(p[1]||p[0],16)]})}
+function hits(rs,cps){if(!rs)return true;for(var c of cps)for(var i=0;i<rs.length;i++)if(c>=rs[i][0]&&c<=rs[i][1])return true;return false}
+function wt(s){s=(s||"400").replace(/normal/,"400").replace(/bold/,"700").trim().split(/\s+/).map(Number);return [s[0],s[1]||s[0]]}
+/* 要的那档粗细没有，照浏览器的顺序找最近的 */
+function pickW(list,w){var ex=list.filter(function(r){return w>=r[0]&&w<=r[1]});if(ex.length)return ex[0];
+ var lo=list.filter(function(r){return r[1]<w}).sort(function(a,b){return b[1]-a[1]}),hi=list.filter(function(r){return r[0]>w}).sort(function(a,b){return a[0]-b[0]});
+ if(w>=400&&w<=500){var mid=hi.filter(function(r){return r[0]<=500});return mid[0]||lo[0]||hi[0]}
+ return w<400?(lo[0]||hi[0]):(hi[0]||lo[0])}
+/* 页面上挂着的每一条 @font-face：读得到的直接读，跨站的再取一次原文；样式选择那排预览用的小字体（text=）不要 */
+async function faces(){var out=[];
+ for(var s of [].slice.call(document.styleSheets)){var href=s.href,rules=null;
+  try{rules=s.cssRules}catch(e){}
+  if(rules){for(var r of [].slice.call(rules))if(r.type===5)out.push({b:r.cssText,base:href||location.href});continue}
+  if(!href||/[?&]text=/.test(href))continue;
+  try{var t=await getText(href);(t.match(/@font-face\s*\{[^}]*\}/g)||[]).forEach(function(b){out.push({b:b,base:href})})}catch(e){}}
+ return out.map(function(f){var src=f.b.match(/url\(\s*["']?([^"')]+)["']?\s*\)/);return {b:f.b,base:f.base,url:src&&src[1],fam:fams(prop(f.b,"font-family"))[0],w:wt(prop(f.b,"font-weight")),it:/italic|oblique/i.test(prop(f.b,"font-style")),rs:ranges(prop(f.b,"unicode-range"))}}).filter(function(f){return f.url&&f.fam})}
+async function fontCSS(pg){
+ var all=await faces();if(!all.length)return "";
+ var byFam={};all.forEach(function(f){(byFam[f.fam]=byFam[f.fam]||[]).push(f)});
+ /* 页上每一处字：用的哪几款、多粗、斜不斜、是哪些字 */
+ var need={};
+ function add(st,txt){if(!txt)return;var cps=new Set();for(var ch of txt){var c=ch.codePointAt(0);if(c>32)cps.add(c)}if(!cps.size)return;
+  var w=parseInt(st.fontWeight)||400,it=/italic|oblique/.test(st.fontStyle);
+  fams(st.fontFamily).forEach(function(fm){if(!byFam[fm])return;var k=fm+"|"+w+"|"+(it?1:0);var o=need[k]||(need[k]={fm:fm,w:w,it:it,cps:new Set()});cps.forEach(function(c){o.cps.add(c)})})}
+ [pg].concat([].slice.call(pg.querySelectorAll("*"))).forEach(function(el){if(!el.getClientRects().length)return;var st=getComputedStyle(el),own="";
+  for(var n=el.firstChild;n;n=n.nextSibling)if(n.nodeType===3)own+=n.nodeValue;
+  if(el.value&&typeof el.value==="string")own+=el.value;
+  add(st,own);
+  ["::before","::after"].forEach(function(p){var ps=getComputedStyle(el,p),c=ps.content;if(c&&c!=="none"&&c!=="normal"){var m=c.match(/"((?:[^"\\]|\\.)*)"/g);if(m)add(ps,m.join(""))}})});
+ /* 挑出要带的那几片 */
+ var keep=new Set();
+ Object.keys(need).forEach(function(k){var o=need[k],list=byFam[o.fm].filter(function(f){return f.it===o.it});if(!list.length)list=byFam[o.fm];
+  var ws=[];list.forEach(function(f){if(!ws.some(function(r){return r[0]===f.w[0]&&r[1]===f.w[1]}))ws.push(f.w)});
+  var W=pickW(ws,o.w);if(!W)return;
+  list.forEach(function(f){if(f.w[0]===W[0]&&f.w[1]===W[1]&&hits(f.rs,o.cps))keep.add(f)})});
+ var picked=Array.from(keep);
+ var parts=await Promise.all(picked.map(async function(f){try{var d=await getData(new URL(f.url,f.base).href);
+  return f.b.replace(/src\s*:[^;}]+/i,"src: url("+d+")")}catch(e){return ""}}));
+ window.__shotFontLast={faces:all.length,picked:picked.length,ok:parts.filter(Boolean).length};
+ return parts.filter(Boolean).join("\n")}
+/* 朝里的那一面不画：backface-visibility:hidden 的，把它到 #page 一路上的 transform 乘起来看朝向 */
+function keepFacing(f0,pg){return function(n){if(f0&&!f0(n))return false;if(n.nodeType!==1)return true;
+ if(getComputedStyle(n).backfaceVisibility!=="hidden")return true;
+ try{var M=new DOMMatrix();for(var e=n;e&&e!==pg;e=e.parentElement){var t=getComputedStyle(e).transform;if(t&&t!=="none")M=new DOMMatrix(t).multiply(M)}return M.m33>=0}catch(x){return true}}}
+window.__shotFontCSS=fontCSS;
+window.__shotPrep=async function(pg,opt){
+ try{opt.filter=keepFacing(opt.filter,pg)}catch(e){}
+ try{var fc=await Promise.race([fontCSS(pg),new Promise(function(r){setTimeout(function(){r("")},20000)})]);if(fc)opt.fontEmbedCSS=fc}catch(e){}};
+})();
 </script>
 <script>/* 交给的时候读原图的拍摄信息（1018）：缩图之前读，读不出来就算了，不编 */
 (function(){
