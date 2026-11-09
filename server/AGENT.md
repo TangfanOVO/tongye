@@ -14,6 +14,7 @@
    **吃的**（可选）：原料 `food` 是那天记过的每一顿（`slot`、`shop`、`place`、`dishes`），挑一顿写进 `page.food = {meal, at, t, items:[[菜, 评价]], q}`：`meal` 用 `slot`，`at` 用 `shop`（没有就 `place`），评价照抄（好吃 / 一般 / 踩雷），`q` 抄那顿或那道菜的备注，没有时间 `t` 就空着。
 8. **版式和风格**：`journal_kit()` 列着全部版式和风格（id、名字、一句话），两根轴分开选，id 写进 `layout` / `style`。不确定就不写，页面按照片数量自己挑。
 9. **放照片**：`journal_publish_photo(id)` 只放要用的几张，拿到 url 填进 `photos[].src`。
+9½. **贴两三张贴纸**：照那天聊的、拍的、吃的用 `journal_stickers(q)` 搜（鸟、雨、爱心…），从**不同类**里挑两三张，写进 `page.mystk=[{c,k,b,t}]`（b 是贴在哪块零件旁边，最多 6 张）。页面贴一次，她撕了就不回来。
 10. **写回**：`journal_write_day(date, page)`。`geo` 和 `shots` 给那天**所有**照片的（路线和快门条才完整），`photos` 只放用到的。
 11. **留一句**（可选）：用 `journal_add_note(date, text, block)` 在你最想说点什么的那块旁边留批注（存成 `notes/<id> = {day, who:"me", text, at, re:null, b:零件id, fx, fy}`）。
     零件 id：sp 书脊、ti 标题、wx 天气、p1 正文、he 主照片、ro 路线、sh 截图、p2 截图说明、qu 引言、pa 双联照、an 照片批注、pe 红笔、su 快门条、tk 小票、en 邮戳。

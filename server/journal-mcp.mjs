@@ -73,6 +73,15 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {} },
     run: async () => { try { return JSON.parse(fs.readFileSync(new URL("./journal-kit.json", import.meta.url), "utf8")); }
       catch { throw new Error("找不到 journal-kit.json（应该跟 journal-mcp.mjs 放在一起）。不确定就别写 layout / style，页面会按照片数量自己挑。"); } } },
+  { name: "journal_stickers", description: "按名字搜贴纸库（天气、字贴、形状、印章、小动物、便签、手绘、涂鸦、拼贴、颜文字、胶带）。做一页时照那天聊的、拍的、吃的搜一搜（鸟、雨、爱心、星星…），挑两三张不同类的写进 journal_write_day 的 page.mystk=[{c,k,b,t}]：c 类、k 哪张、b 贴在哪块零件旁边（ti 标题 / wx 天气 / he 主照片 / p1 正文 / ro 路线 / sh 手机框 / p2），t 字贴上的字（可选），最多 6 张。页面贴一次，她撕了就不回来。q 空就每类随手给一张。",
+    inputSchema: { type: "object", properties: { q: { type: "string", description: "名字里的词，比如 鸟、雨、爱心；空＝每类随手一张" }, cat: { type: "string", description: "只在某一类里搜（可选）" }, limit: { type: "integer" } } },
+    run: async a => { let d; try { d = JSON.parse(fs.readFileSync(new URL("./sticker-catalog.json", import.meta.url), "utf8")); }
+      catch { throw new Error("找不到 sticker-catalog.json（应该跟 journal-mcp.mjs 放在一起）。"); }
+      const q = String(a.q || "").trim().toLowerCase(), lim = Math.min(Number(a.limit) || 12, 50), skip = new Set(["quote", "mine"]);
+      const pool = d.items.filter(x => (!a.cat || x.c === a.cat) && !skip.has(x.c)), tag = x => ({ ...x, cat: d.cats[x.c] });
+      if (!q) { const by = {}; pool.forEach(x => (by[x.c] = by[x.c] || []).push(x)); return Object.values(by).map(v => tag(v[Math.floor(Math.random() * v.length)])).slice(0, lim); }
+      const sc = x => (x.g || "").toLowerCase() === q ? 4 : (x.n || "").toLowerCase().includes(q) ? 3 : (x.g || "").toLowerCase().includes(q) ? 2 : String(x.k).toLowerCase().includes(q) ? 1 : 0;
+      return pool.map(x => [sc(x), x]).filter(t => t[0]).sort((u, v) => v[0] - u[0]).slice(0, lim).map(t => tag(t[1])); } },
   { name: "journal_add_note", description: "在某天那页的某个零件旁边留一条你的批注，她打开那页会看到一个钉子。block 是零件 id（比如 p1 正文、he 主照片、ro 路线，全部见 journal_kit 的 blocks）；fx / fy 是钉在零件上的位置（0 到 1，默认右上角）。回她的批注用 journal_reply_note。",
     inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD，9.27 这种也认" }, text: { type: "string" }, block: { type: "string" }, fx: { type: "number" }, fy: { type: "number" } }, required: ["date", "text"] },
     run: async a => { const k = dayKey(a.date), b = a.block || "p1";
